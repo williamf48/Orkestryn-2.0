@@ -657,7 +657,7 @@ def main(argv=None):
             if not v['live']:p.error('This is a scripted mission; start a separate declared live mission.')
             if v['phase'] not in {'DRAFT','QUEUE_READY','INCIDENT_RECORDED'}:p.error('No new model request is eligible in this phase. Use advance without --live to reconcile saved work.')
         print('At most one paid attempt per Factory/Governance/Recovery role; three for the entire mission. No automatic retries. Separate effect consent.',flush=True)
-        key=(os.environ.get('NEBIUS_API_KEY') or getpass('Paste Nebius key locally (hidden): ')).strip()
+        key=(os.environ.get('ORKESTRYN2_NEBIUS_API_KEY') or getpass('Paste Nebius key locally (hidden): ')).strip()
         if not key:p.error('No key supplied.')
         providers={r:RoleClient(r,key,args.max_output_tokens,args.thinking=='on') for r in ROLES}
     def consent(kind,proposal,phrase):

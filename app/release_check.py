@@ -29,7 +29,7 @@ TOKEN_PATTERNS = (
     re.compile(r'(?<![A-Za-z0-9])github_pat_[A-Za-z0-9_]{30,}'),
     re.compile(r'-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----'),
 )
-KEY_LITERAL = re.compile(r'''["']?(?:NEBIUS_API_KEY|OPENAI_API_KEY|api_key)["']?\s*[:=]\s*(["'])([^"'\r\n]{32,})\1''', re.I)
+KEY_LITERAL = re.compile(r'''["']?(?:(?:ORKESTRYN2_)?NEBIUS_API_KEY|OPENAI_API_KEY|api_key)["']?\s*[:=]\s*(["'])([^"'\r\n]{32,})\1''', re.I)
 
 
 def path_problem(name):

@@ -603,7 +603,7 @@ def main(argv=None):
     if args.live:
         if not 1024<=args.max_output_tokens<=10000:p.error('Use 1024-10000 output tokens.')
         print('One paid ordering attempt; no retries or scripted replacement. Exact manager consent remains separate.',flush=True)
-        key=(os.environ.get('NEBIUS_API_KEY') or getpass('Paste Nebius key locally (hidden): ')).strip()
+        key=(os.environ.get('ORKESTRYN2_NEBIUS_API_KEY') or getpass('Paste Nebius key locally (hidden): ')).strip()
         if not key:p.error('No key supplied.')
         provider=Planner(key,args.max_output_tokens,args.thinking=='on')
     def consent(plan,phrase):

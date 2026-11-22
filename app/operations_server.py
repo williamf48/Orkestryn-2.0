@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Loopback named-user control API; exact source/state-bound browser reviews."""
 from __future__ import annotations
+import hashlib,os
 import argparse,copy,http.client,json,re,secrets,sqlite3,threading,time,webbrowser
 from http.cookies import SimpleCookie
 from http.server import ThreadingHTTPServer,BaseHTTPRequestHandler
@@ -36,6 +37,9 @@ class Server(ThreadingHTTPServer):
     daemon_threads=True
     def __init__(self,root,port=0,provider=None,max_calls=16,proposal_providers=None,*,https_origin=None,bind_host='127.0.0.1',allow_browser_keys=True):
         self.root=ops.directory_for(root);self.root.mkdir(parents=True,exist_ok=True)
+        # Browsers share cookies across ports; give each edition and workspace its own name.
+        key=os.path.normcase(str(self.root.resolve())).encode('utf-8')
+        self.session_cookie_name='orkestryn2_session_'+hashlib.sha256(key).hexdigest()[:20]
         self.https_origin=public_origin(https_origin) if https_origin is not None else None
         if bind_host not in {'127.0.0.1','0.0.0.0'} or (bind_host!='127.0.0.1' and not self.https_origin):
             raise ValueError('A network listener requires an explicit HTTPS public origin.')
@@ -90,10 +94,10 @@ class Handler(BaseHTTPRequestHandler):
         hosts=self.headers.get_all('Host',[]);origins=self.headers.get_all('Origin',[])
         return hosts==[host] and (origins==[origin] if post else not origins or origins==[origin])
     def session_cookie(self,token='',logout=False):
-        return ('ar_session='+token+'; HttpOnly; SameSite=Strict; Path=/; Max-Age='
+        return (self.server.session_cookie_name+'='+token+'; HttpOnly; SameSite=Strict; Path=/; Max-Age='
                 +('0' if logout else '1800')+('; Secure' if self.server.https_origin else ''))
     def token(self):
-        cookie=SimpleCookie();cookie.load(self.headers.get('Cookie',''));return cookie.get('ar_session').value if cookie.get('ar_session') else ''
+        cookie=SimpleCookie();cookie.load(self.headers.get('Cookie',''));item=cookie.get(self.server.session_cookie_name);return item.value if item else ''
     def auth(self,store,write=False):return store.session(self.token(),self.headers.get('X-CSRF-Token','') if write else None)
     def body(self):
         length=int(self.headers.get('Content-Length','0'))

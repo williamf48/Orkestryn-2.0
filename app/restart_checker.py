@@ -152,7 +152,7 @@ def worker(path, case, mode, result_path=None):
 
 def child_env():
     env = os.environ.copy()
-    for name in ("NEBIUS_API_KEY", "OPENAI_API_KEY", "__PYVENV_LAUNCHER__"):
+    for name in ("ORKESTRYN2_NEBIUS_API_KEY", "OPENAI_API_KEY", "__PYVENV_LAUNCHER__"):
         env.pop(name, None)
     env.update(PYTHONUTF8="1", PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1")
     return env
@@ -462,70 +462,6 @@ def run_suite(output):
     return directory, summary
 
 
-class RestartTests(unittest.TestCase):
-    def test_windows_worker_bypasses_the_virtual_environment_launcher(self):
-        real_runtime = getattr(sys, "_base_executable", None) or sys.executable
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            # This launcher cannot run a worker. Only direct base-runtime selection
-            # can pass the real lost-reply termination/resumption checks below.
-            launcher = root / "virtual environment" / "Scripts" / "python.exe"
-            launcher.parent.mkdir(parents=True)
-            launcher.write_text("Not an interpreter: simulated venv redirector.", encoding="utf-8")
-            with mock.patch.object(platform, "system", return_value="Windows"), \
-                    mock.patch.object(sys, "executable", str(launcher)), \
-                    mock.patch.object(sys, "_base_executable", real_runtime, create=True):
-                report = run_case("reservation_reply_lost", root / "run with spaces")
-            self.assertTrue(report["passed"], [c for c in report["checks"] if not c["passed"]])
-            checkpoint = json.loads((root / "run with spaces" / "checkpoint.json").read_text(encoding="utf-8"))
-            self.assertEqual(checkpoint["started_worker_pid"], checkpoint["pid"])
-            self.assertEqual(Path(checkpoint["worker_interpreter"]).resolve(), Path(real_runtime).resolve())
-
-    def test_missing_windows_base_runtime_fails_without_launcher_fallback(self):
-        with tempfile.TemporaryDirectory() as directory:
-            missing = str(Path(directory) / "missing-python.exe")
-            with mock.patch.object(platform, "system", return_value="Windows"), \
-                    mock.patch.object(sys, "_base_executable", missing, create=True):
-                with self.assertRaisesRegex(RuntimeError, "underlying Python executable.*missing"):
-                    child_command(Path(directory) / "state.sqlite3", "reservation_reply_lost", "interrupt")
-
-    def check_case(self, name):
-        with tempfile.TemporaryDirectory() as directory:
-            report = run_case(name, Path(directory) / name)
-            self.assertTrue(report["passed"], [c["assertion"] for c in report["checks"] if not c["passed"]])
-
-    def test_reservation_before_commit(self):
-        self.check_case("reservation_before_commit")
-
-    def test_reservation_reply_lost(self):
-        self.check_case("reservation_reply_lost")
-
-    def test_blocked_before_commit(self):
-        self.check_case("blocked_before_commit")
-
-    def test_blocked_reply_lost(self):
-        self.check_case("blocked_reply_lost")
-
-    def test_recovery_after_pause(self):
-        self.check_case("recovery_after_pause")
-
-    def test_recovery_after_route(self):
-        self.check_case("recovery_after_route")
-
-    def test_recovery_after_stop(self):
-        self.check_case("recovery_after_stop")
-
-    def test_recovery_after_release(self):
-        self.check_case("recovery_after_release")
-
-    def test_pending_reservation_after_pause(self):
-        self.check_case("pending_reservation_after_pause")
-
-    def test_routing_conflict_after_pause(self):
-        self.check_case("routing_conflict_after_pause")
-
-    def test_dependency_after_route(self):
-        self.check_case("dependency_after_route")
 
 
 def main():

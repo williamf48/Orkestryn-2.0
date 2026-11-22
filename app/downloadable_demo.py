@@ -11,6 +11,7 @@ import secrets
 import sys
 import webbrowser
 
+import desktop_entry
 import install_update
 import judge_setup
 import judge_evaluation
@@ -23,12 +24,8 @@ CONTACT = 'https://github.com/williamf48'
 GUIDE_PREFIX = 'DEMO_WELCOME_PRIVATE-'
 
 
-def default_directory(environment=None):
-    environment = os.environ if environment is None else environment
-    local = environment.get('LOCALAPPDATA', '')
-    if local and Path(local).is_absolute():
-        return Path(local) / 'AgentRehearsal' / 'DownloadableDemo'
-    return ROOT / 'judge_access_private' / 'downloadable-demo'
+def default_directory():
+    return desktop_entry.private_root() / 'judge-workspace'
 
 
 def package_version():
@@ -119,13 +116,13 @@ hosting setup. Startup ignores environment keys. Each live request still require
 <p class="note">Capacity units and customer dependencies are local fixtures. In free mode,
 model replies are scripted. These results do not claim cloud GPU provisioning or live-model quality.</p></section>
 <p>Settings, accounts and saved runs stay in this computer's private demo directory.
-Restarting preserves them. Reopen the <strong>Orkestryn portable launcher</strong> or <strong>START_DEMO.cmd</strong> for a fresh welcome page.</p>
+Restarting preserves them. Reopen the <strong>Orkestryn portable launcher</strong> with <code>--demo</code> for a fresh welcome page.</p>
 </main></html>'''
 
 
 def prepare_demo(directory, *, port=0):
     version = package_version()
-    directory = judge_setup.checked_directory(directory)
+    directory = desktop_entry.workspace_directory(directory, 'judge')
     server = judge_setup.local_server(directory, live=False, port=port)
     try:
         settings = judge_setup.load(directory)
@@ -143,7 +140,7 @@ def prepare_demo(directory, *, port=0):
 
 def check_demo(directory):
     package_version()
-    directory = judge_setup.checked_directory(directory)
+    directory = desktop_entry.workspace_directory(directory, 'check')
     output = ops.directory_for(directory / 'download_checks')
     output.mkdir(parents=True, exist_ok=True)
     path, _ = ops.demo(output)
@@ -170,20 +167,20 @@ def main(argv=None):
     parser.add_argument('--port', type=int, default=0)
     parser.add_argument('--no-browser', action='store_true')
     args = parser.parse_args(argv)
-    directory = args.directory if args.directory is not None else default_directory()
+    directory = args.directory or (desktop_entry.private_root() / 'checks' if args.action == 'check' else default_directory())
     if args.action == 'check':
         if args.port:parser.error('The finite check uses its own local ports.')
         try:
             result = check_demo(directory)
         except (ValueError, OSError, KeyError):
-            print('The download check could not finish. Use a complete extracted package and a writable private data directory. See DOWNLOADABLE_DEMO.md.')
+            print('The download check could not finish. Use a complete extracted package and a writable private data directory. See README.md.')
             return 1
         print(json.dumps(result))
         return 0 if result['status'] == 'PASSED' else 1
     try:
         server, guide, version = prepare_demo(directory, port=args.port)
     except (ValueError, OSError, KeyError):
-        print('The demo could not start. Extract the complete ZIP, use Python 3.10 or newer and keep existing private settings. See DOWNLOADABLE_DEMO.md. Credentials were not printed.')
+        print('The demo could not start. Extract the complete ZIP, use Python 3.10 or newer and keep existing private settings. See README.md. Credentials were not printed.')
         return 1
     print('Orkestryn downloadable demo: ' + version, flush=True)
     print('Startup: free rehearsal, zero model calls. Optional NVIDIA key entry is in Create a workflow.', flush=True)

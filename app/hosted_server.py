@@ -16,9 +16,9 @@ import operations_server
 import operations_workspace as ops
 
 ACCOUNTS = {
-    'workspace-admin': ('AR_ADMIN_PASSWORD', ['admin', 'viewer']),
-    'judge-manager': ('AR_MANAGER_PASSWORD', ['manager', 'deployer', 'cost', 'traffic', 'consumer', 'viewer']),
-    'judge-customer': ('AR_CUSTOMER_PASSWORD', ['owner_C', 'viewer']),
+    'workspace-admin': ('ORKESTRYN2_ADMIN_PASSWORD', ['admin', 'viewer']),
+    'judge-manager': ('ORKESTRYN2_MANAGER_PASSWORD', ['manager', 'deployer', 'cost', 'traffic', 'consumer', 'viewer']),
+    'judge-customer': ('ORKESTRYN2_CUSTOMER_PASSWORD', ['owner_C', 'viewer']),
 }
 
 
@@ -68,30 +68,31 @@ def provision(root, environment):
 
 def configured_server(environment=None):
     environment = os.environ if environment is None else environment
-    origin = operations_server.public_origin(environment.get('AR_PUBLIC_ORIGIN', ''))
+    origin = operations_server.public_origin(environment.get('ORKESTRYN2_PUBLIC_ORIGIN', ''))
     try:
-        port = int(environment.get('PORT', '10000'))
-        output_tokens = int(environment.get('AR_MAX_OUTPUT_TOKENS', '8192'))
+        port = int(environment.get('PORT', '10001'))
+        output_tokens = int(environment.get('ORKESTRYN2_MAX_OUTPUT_TOKENS', '8192'))
     except (TypeError, ValueError):
-        raise ValueError('PORT and AR_MAX_OUTPUT_TOKENS must be integers.') from None
+        raise ValueError('PORT and ORKESTRYN2_MAX_OUTPUT_TOKENS must be integers.') from None
     if not 1 <= port <= 65535 or not 1024 <= output_tokens <= 10000:
-        raise ValueError('Use PORT 1-65535 and AR_MAX_OUTPUT_TOKENS 1024-10000.')
-    live = environment.get('AR_LIVE_PROPOSALS', '0')
+        raise ValueError('Use PORT 1-65535 and ORKESTRYN2_MAX_OUTPUT_TOKENS 1024-10000.')
+    live = environment.get('ORKESTRYN2_LIVE_PROPOSALS', '0')
     if live not in {'0', '1'}:
-        raise ValueError('AR_LIVE_PROPOSALS must be 0 or 1.')
+        raise ValueError('ORKESTRYN2_LIVE_PROPOSALS must be 0 or 1.')
     providers = None
     if live == '1':
-        key = environment.get('NEBIUS_API_KEY', '').strip()
+        key = environment.get('ORKESTRYN2_NEBIUS_API_KEY', '').strip()
         if not key:
-            raise ValueError('Live proposals need NEBIUS_API_KEY in the host secret settings.')
+            raise ValueError('Live proposals need ORKESTRYN2_NEBIUS_API_KEY in the host secret settings.')
         # Client construction sends no request. Every attempt still needs its own
         # authenticated manager review in the browser.
         providers = {role: ops.RoleClient(role, key, output_tokens, True) for role in ops.ROLES}
-    root = Path(environment.get('AR_STATE_ROOT', '/var/data/agent-rehearsal')).absolute()
+    root = Path(environment.get('ORKESTRYN2_STATE_ROOT', '/var/data/orkestryn-2.0')).absolute()
     source = Path(__file__).resolve().parent
     if root == source or source in root.parents:
         raise ValueError('Keep hosted accounts and runs on a persistent volume outside the source tree.')
-    root = ops.directory_for(root)
+    from desktop_entry import workspace_directory
+    root = workspace_directory(ops.directory_for(root), 'hosted')
     root.mkdir(parents=True, exist_ok=True)
     provision(root, environment)
     forget_account_secrets()
@@ -103,7 +104,7 @@ def main():
         server = configured_server()
     except (ValueError, OSError, ImportError, named_access.AccessDenied):
         # Never echo environment values or provider exception text into platform logs.
-        print('Hosted startup needs valid AR_PUBLIC_ORIGIN, persistent storage, account secrets and optional live-provider setup. See HOSTING.md.', file=sys.stderr)
+        print('Hosted startup needs valid ORKESTRYN2_PUBLIC_ORIGIN, persistent storage, account secrets and optional live-provider setup. See README.md.', file=sys.stderr)
         return 1
     print('Orkestryn: ' + server.https_origin, flush=True)
     print('Hosted accounts configured. No model request is made at startup.', flush=True)

@@ -620,20 +620,20 @@ def browser_clients(mode='auto', *, enable_inference=False, output_tokens=8192,
     if mode == 'scripted' and not enable_inference:
         return None, None
     environment = os.environ if environment is None else environment
-    key = environment.get('NEBIUS_API_KEY', '')
+    key = environment.get('ORKESTRYN2_NEBIUS_API_KEY', '')
     if not isinstance(key, str):
         raise ValueError('Configure the Nebius key in the server environment.')
     key = key.strip()
     live = mode == 'live' or (mode == 'auto' and bool(key))
     if (live or enable_inference) and not key:
         if not m.terminal_guard.interactive_input():
-            raise ValueError('The workspace owner must configure NEBIUS_API_KEY on the server. Judges do not enter a key.')
+            raise ValueError('The workspace owner must configure ORKESTRYN2_NEBIUS_API_KEY on the server. Judges do not enter a key.')
         with warnings.catch_warnings():
             warnings.simplefilter('error', GetPassWarning)
             try:
                 key = getpass('Workspace owner Nebius key (hidden): ').strip()
             except (GetPassWarning, EOFError):
-                raise ValueError('A hidden owner key prompt is unavailable. Configure NEBIUS_API_KEY on the server.') from None
+                raise ValueError('A hidden owner key prompt is unavailable. Configure ORKESTRYN2_NEBIUS_API_KEY on the server.') from None
         if not key:
             raise ValueError('No key supplied; live mode was not started.')
     # These constructors make no request. The frozen browser review authorizes
@@ -696,7 +696,7 @@ def main(argv=None):
             auth.create(args.user,getpass('New local password (12+ characters): '),sorted(access.ROLES));print('Local account ready. Run: python project.py operations serve --open');return 0
         _,_,principal=auth.login(args.user,getpass('Local account password (hidden): '));providers=None
         if args.live:
-            key=(os.environ.get('NEBIUS_API_KEY') or getpass('Nebius key locally (hidden): ')).strip();providers={r:RoleClient(r,key,args.max_output_tokens,args.thinking=='on') for r in ROLES}
+            key=(os.environ.get('ORKESTRYN2_NEBIUS_API_KEY') or getpass('Nebius key locally (hidden): ')).strip();providers={r:RoleClient(r,key,args.max_output_tokens,args.thinking=='on') for r in ROLES}
         if args.action=='start':
             auth.require(principal,'manager');workflow=planner.validate_workflow(ws.read_json(args.workflow)) if args.workflow else planner.profile(args.profile)
             path=create(args.output,workflow,args.live,args.ttl,providers['factory'].request_settings if providers else {})

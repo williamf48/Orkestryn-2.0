@@ -16,18 +16,17 @@ import browser_proposals
 
 
 def data_directory(main=False):
-    if main and os.name == 'nt':
-        return Path.home() / 'AgentRehearsal' / 'operations_runs'
     return desktop_entry.private_root() / ('main-workspace' if main else 'judge-workspace')
 
 
 def prepare(main, directory, port):
     if not main:
         return downloadable_demo.prepare_demo(directory, port=port)
+    directory = desktop_entry.workspace_directory(directory, 'main')
     _, version = install_update.payload(Path(__file__).resolve().parent)
     # Constructing a client makes no model request. The same browser reviews and
     # caps apply to owner-configured access and privately entered session keys.
-    key = os.environ.get('NEBIUS_API_KEY', '').strip()
+    key = os.environ.get('ORKESTRYN2_NEBIUS_API_KEY', '').strip()
     providers = browser_proposals.providers(key) if key else None
     server = operations_server.Server(directory, port=port, proposal_providers=providers)
     return server, None, version
@@ -42,7 +41,7 @@ def open_workspace(server, guide):
 
 
 def console(args):
-    directory = args.directory or data_directory(args.main)
+    directory = args.directory or (desktop_entry.private_root() / 'checks' if args.check else data_directory(args.main))
     if args.check:
         result = downloadable_demo.check_demo(directory)
         print(json.dumps(result), flush=True)
@@ -70,12 +69,12 @@ def graphical(args):
     import tkinter as tk
     from tkinter import ttk, messagebox
     window = tk.Tk()
-    window.title('Orkestryn')
+    window.title('Orkestryn 2.0')
     window.geometry('620x400')
     window.minsize(530, 360)
     frame = ttk.Frame(window, padding=28)
     frame.pack(fill='both', expand=True)
-    ttk.Label(frame, text='Orkestryn', font=('Segoe UI', 22, 'bold')).pack(anchor='w')
+    ttk.Label(frame, text='Orkestryn 2.0', font=('Segoe UI', 22, 'bold')).pack(anchor='w')
     ttk.Label(frame, text='Agents in sync. Humans in control.').pack(anchor='w', pady=(2, 20))
     status = tk.StringVar(value='Choose a workspace. The complete dashboard opens in your browser.')
     ttk.Label(frame, textvariable=status, wraplength=550).pack(anchor='w', pady=(0, 18))
@@ -124,7 +123,9 @@ def graphical(args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--main', action='store_true', help='Use the owner workspace; Windows reuses ~/AgentRehearsal/operations_runs.')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--main', action='store_true', help='Open the independent Orkestryn 2.0 owner workspace.')
+    mode.add_argument('--demo', action='store_true', help='Open the isolated judge demo (portable default).')
     parser.add_argument('--console', action='store_true', help='Run without the optional graphical launcher.')
     parser.add_argument('--no-browser', action='store_true')
     parser.add_argument('--directory', type=Path)

@@ -27,13 +27,50 @@ def configure_runtime():
 
 
 def private_root():
-    if os.name == 'nt':
-        value = os.environ.get('LOCALAPPDATA')
-        return (Path(value) if value and Path(value).is_absolute() else Path.home() / 'AppData' / 'Local') / 'Orkestryn'
-    if sys.platform == 'darwin':
-        return Path.home() / 'Library' / 'Application Support' / 'Orkestryn'
-    value = os.environ.get('XDG_DATA_HOME')
-    return (Path(value) if value and Path(value).is_absolute() else Path.home() / '.local' / 'share') / 'Orkestryn'
+    if sys.platform == 'win32':
+        local = os.environ.get('LOCALAPPDATA', '')
+        parent = Path(local) if local and Path(local).is_absolute() else Path.home() / 'AppData' / 'Local'
+    elif sys.platform == 'darwin':
+        parent = Path.home() / 'Library' / 'Application Support'
+    else:
+        local = os.environ.get('XDG_DATA_HOME', '')
+        parent = Path(local) if local and Path(local).is_absolute() else Path.home() / '.local' / 'share'
+    return parent / 'Orkestryn-2.0'
+
+
+def workspace_directory(path, role):
+    """Only initialize an empty directory or reopen a workspace for this edition and role."""
+    if role not in {'main', 'judge', 'check', 'hosted'}:
+        raise ValueError('Unknown workspace type.')
+    path = checked_directory(path)
+    marker = path / '.orkestryn-2.workspace'
+    expected = ('Orkestryn 2.0:' + role + '\n').encode('ascii')
+    def read_marker():
+        if marker.is_symlink() or not marker.is_file() or marker.stat().st_size > 64:
+            raise ValueError('Invalid workspace marker.')
+        for _ in range(30):
+            content = marker.read_bytes()
+            if content == expected:
+                return path
+            if content:
+                break
+            # Another process may be between its exclusive create and write.
+            import time
+            time.sleep(0.01)
+        raise ValueError('This directory is not a workspace of the requested type.')
+    if marker.exists() or marker.is_symlink():
+        return read_marker()
+    if any(path.iterdir()):
+        if marker.exists() or marker.is_symlink():
+            return read_marker()
+        raise ValueError('Choose an empty directory. Existing workspaces are never migrated or overwritten.')
+    try:
+        fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        return read_marker()
+    with os.fdopen(fd, 'wb') as stream:
+        stream.write(expected)
+    return path
 
 
 def checked_directory(path):

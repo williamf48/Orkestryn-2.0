@@ -40,7 +40,7 @@ def prepare_owner(directory, url):
             'Never publish this file. This contains an evaluation password, not a Nebius API key.\n\n'
             'In Cloudflare Worker Variables and Secrets add these two Secret values:\n'
             'RELAY_USERNAME: ' + value['username'] + '\nRELAY_PASSWORD: ' + value['password'] + '\n\n'
-            'Add your NEBIUS_API_KEY separately as a Cloudflare Secret.\n'
+            'Add your ORKESTRYN2_NEBIUS_API_KEY separately as a Cloudflare Secret.\n'
             'Public relay origin: ' + value['origin'] + '\n\n'
             'Give judges the origin, evaluation username and evaluation password in private Devpost testing instructions.\n'
             'They run START_JUDGE_LIVE.cmd and enter these once. No provider key is distributed.\n'

@@ -17,13 +17,14 @@ import secrets
 import warnings
 import webbrowser
 
+import desktop_entry
 import hosted_server
 import operations_server
 import operations_workspace as ops
 import terminal_guard
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT = ROOT / 'judge_access_private'
+DEFAULT = desktop_entry.private_root() / 'judge-workspace'
 VERSION = 'agent-rehearsal-judge-settings-v1'
 
 
@@ -81,16 +82,16 @@ def instructions(settings, origin=None):
             'Use judge-customer for customer handoff and exact job release.\n'
             'workspace-admin is only for testing account administration in this dedicated evaluation workspace.\n'
             'These are separate demo accounts, not proof of separate people.\n'
-            'Follow JUDGE_TESTING.md. Sign out before switching roles, or use separate browser profiles.\n'
+            'Sign out before switching roles, or use separate browser profiles.\n'
             'Sessions last 30 minutes; sign in again as needed. New workflows default to 60 minutes; choose 15, 30 or 60 minutes before creation.\n'
             'The deployment owner configures and funds Nebius; judges need no personal API key.\n'
-            'Provide the actual deployed URL and these credentials in Devpost testing instructions.\n'
-            'Keep access available through December 15, 2026 at noon Pacific.\n')
+            'Keep these credentials private.\n')
 
 
 def prepare(directory):
-    directory = checked_directory(directory)
-    directory.mkdir(mode=0o700, parents=True, exist_ok=False)
+    directory = desktop_entry.workspace_directory(directory, 'judge')
+    if any(p.name != '.orkestryn-2.workspace' for p in directory.iterdir()):
+        raise ValueError('Use the saved judge credentials or choose a new empty directory.')
     settings = {'version': VERSION, 'accounts': {name: 'arp_' + secrets.token_urlsafe(32) for name in hosted_server.ACCOUNTS}}
     validate(settings)
     private_write(directory/'credentials.json', json.dumps(settings, indent=2)+'\n')
@@ -103,30 +104,31 @@ def export_hosting(directory, origin):
     directory = checked_directory(directory);settings = load(directory)
     target = directory / ('hosting-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + secrets.token_hex(4))
     target.mkdir(mode=0o700)
-    values = {'AR_PUBLIC_ORIGIN': origin, **environment(settings), 'AR_LIVE_PROPOSALS': '1', 'AR_MAX_OUTPUT_TOKENS':'8192'}
+    values = {'ORKESTRYN2_PUBLIC_ORIGIN': origin, **environment(settings), 'ORKESTRYN2_LIVE_PROPOSALS': '1', 'ORKESTRYN2_MAX_OUTPUT_TOKENS':'8192'}
     # JSON settings are for this helper; env values must be safe single-line literals.
     # Generated URL-safe passwords satisfy this. Reject manually edited env syntax.
     if any(not all(c.isalnum() or c in '_-.:/' for c in v) for v in values.values()):
         raise ValueError('Use the original generated passwords for an environment export.')
     private_write(target/'hosting.env', '\n'.join(k+'='+v for k,v in values.items())+'\n')
     private_write(target/'DEVPOST_TESTING_PRIVATE.txt', instructions(settings, origin))
-    private_write(target/'README_PRIVATE.txt', 'Copy hosting.env values into the host secret settings. Add NEBIUS_API_KEY there separately. '
+    private_write(target/'README_PRIVATE.txt', 'Copy hosting.env values into the host secret settings. Add ORKESTRYN2_NEBIUS_API_KEY there separately. '
         'Never give that API key to judges. Use a dedicated persistent state directory. These values create missing accounts only; '
-        'they do not reset existing passwords. A prepared export is not a deployment. Follow HOSTING.md.\n')
+        'they do not reset existing passwords. A prepared export is not a deployment. See README.md.\n')
     return target
 
 
 def local_server(directory, *, live=False, port=0, output_tokens=8192, key=None):
     if type(port) is not int or not 0 <= port <= 65535 or type(output_tokens) is not int or not 1024 <= output_tokens <= 10000:
         raise ValueError('Use port 0-65535 and output tokens 1024-10000.')
-    directory = checked_directory(directory)
-    settings = load(directory) if directory.exists() else prepare(directory)
+    directory = desktop_entry.workspace_directory(directory, 'judge')
+    credentials = directory / 'credentials.json'
+    settings = load(directory) if credentials.exists() or credentials.is_symlink() else prepare(directory)
     providers = None
     if live:
-        key = (key or os.environ.get('NEBIUS_API_KEY') or '').strip()
+        key = (key or os.environ.get('ORKESTRYN2_NEBIUS_API_KEY') or '').strip()
         if not key:
             if not terminal_guard.interactive_input():
-                raise ValueError('Use an interactive terminal for the hidden Nebius key prompt, or set NEBIUS_API_KEY locally.')
+                raise ValueError('Use an interactive terminal for the hidden Nebius key prompt, or set ORKESTRYN2_NEBIUS_API_KEY locally.')
             with warnings.catch_warnings():
                 warnings.simplefilter('error', GetPassWarning)
                 key = getpass('Nebius key locally (hidden): ').strip()
