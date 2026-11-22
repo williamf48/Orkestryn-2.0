@@ -1,0 +1,119 @@
+{
+  "id": "orkestryn-round-004",
+  "date_ist": "2026-11-20",
+  "title": "When is old or partial evidence still enough?",
+  "parent_sha256": "7563f20517d4bc65beb68623a9a6239b6ee30b69e97b08230ca4ce8eb7f86544",
+  "registration": "Local specification frozen after knowing round 3 and inspecting upstream schema, before scoring or timing. Not an external preregistration.",
+  "localization": {
+    "sample": "48 previously authored Safety Lab fixtures plus 12 new transient/lasting pairs of length 8: first event at steps 2,3,4,5,6,7, each as audit or capacity; pair has either immediate restoration or no repair. Each pair uses two plans (24 total). Separate these constructed cases from legacy; do not count as independent field events.",
+    "strides": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "feeds": [
+      "complete",
+      "drop_final"
+    ],
+    "methods": [
+      "snapshot_point",
+      "latched_interval"
+    ],
+    "primary": "Stride four, complete. Compare point at first visibly damaged checkpoint (or none) with interval after last known-clean cumulative check through first positive cumulative check. Received latches are trustworthy; a dropped final receipt without a prior positive yields unknown, not clearance. Use equally spaced checkpoints and a final checkpoint; do not insert another when the final one is dropped. Validate local instrument against separate full state-history oracle. Report transient cases separately, errors vs unresolved intervals, widths and singleton precision."
+  },
+  "human": {
+    "decisions": [
+      "approve",
+      "hold",
+      "timeout",
+      "missing"
+    ],
+    "edits": [
+      "none",
+      "note",
+      "key_order",
+      "scope",
+      "edit_restore",
+      "other_case",
+      "revoked"
+    ],
+    "ages_seconds": [
+      0,
+      60,
+      61
+    ],
+    "used": [
+      false,
+      true
+    ],
+    "rules": [
+      "decision_only",
+      "content_bound",
+      "revision_bound",
+      "material_receipt"
+    ],
+    "primary": "Controlled receipt-reuse experiment only, no real people. A prior approval may carry only for the same decision object, identical typed scope, unbroken material revision, currently active authority, within inclusive 60 seconds and unspent. Cosmetic edits are allowed. Compare unbound decisions, scope digest alone, strict document revision and a decision-scoped material revision with all remaining checks. All tightened comparators use expiry, active authority and consumption; require current case identity in the two revision checks but deliberately omit it in content-only. Invalid/negative/future evidence is not a usable consent. Count mistaken reuse and unnecessary re-review. No operational permissions modified."
+  },
+  "handoff": {
+    "topologies": [
+      "AAA",
+      "AAB",
+      "ABC"
+    ],
+    "rules": [
+      "origins",
+      "current_origins",
+      "refresh_one"
+    ],
+    "conditions": "Binary previous/current eligibility, 3-bit per-origin stale assignment, availability per slot, and error by origin. Cross 4 states, 3 topologies, 8 epoch masks, 8 availability masks, and all 8 source-fault masks. Each vote has a root and revision. First rule ignores revision. Second uses only two agreeing distinct current origins; third may additionally refresh one available stale distinct root if unresolved. Refresh selects first reachable stale root, retains its underlying fault, and costs a separate read. Mixed epochs may agree if facts happen not to change. Preserve all settings and operations. Report <=1 vs >=2 faulty sources separately, transition subset as primary. No real services or voters."
+  },
+  "budget": {
+    "workloads": [
+      "original",
+      "workload"
+    ],
+    "splits": [
+      "heldout"
+    ],
+    "modes": [
+      "typed",
+      "wire"
+    ],
+    "strategies": [
+      "prefix_defer",
+      "indexed_defer"
+    ],
+    "price": 1,
+    "full_budget": 16,
+    "workers": 7,
+    "blocks": 5,
+    "warmups": 2,
+    "loops": 6,
+    "seed": 40404,
+    "primary": "Compare two complete-equivalent reviews on the held-out 24 originals and earlier outcome-identical twins. Wall time per plan on this host. Both start from cached typed context or both from identical encoded context (decode plus strict candidate validation inside every measured call). Include deep copies and transitions. Same returned decision, first authority/harm and through required at budget 16; timed separately from regressions without overlapping jobs. Within independent interpreter workers alternate randomized matched order, two warm-up blocks, five measured blocks, six full passes over each condition; report medians of per-worker paired indexed/prefix ratios and worker range. No outside inference or token costs. Reproducibility relates to decisions, not exact elapsed times."
+  },
+  "external": {
+    "repository": "sierra-research/tau2-bench",
+    "commit": "fc0055dc4e0a316c3f83133267fbd6faaa770992",
+    "version": "v1.0.1",
+    "path": "data/tau2/domains/telecom/tasks.json",
+    "blob": "6f41a5e3489e187fa247d729706509d8250a31c1",
+    "cohort": "All entries in tasks.json (same blob as tasks_full, count once). Record schema exclusions, empty references separately. Project solely ordered requestor labels user/assistant; if upstream labels agent, normalize to assistant. For nonempty sequences find first change away from the initial role (or none). This is descriptive of one reference ordering, not uniquely needed or observed agent behavior, safety or real people.",
+    "budgets": [
+      1,
+      2,
+      4,
+      6,
+      8,
+      12,
+      16
+    ],
+    "policies": [
+      "prefix",
+      "spread"
+    ],
+    "primary": "Four role header inspections max. Prefix samples first k. Spread holds first/last with evenly spaced integer-floor positions, or first alone if k=1. For each proof, compute the sharp set of possible first-switch positions or no switch given precisely the sampled roles, without assuming a single switch. Naive point = first differing sampled role, else no switch. Count incorrect point estimates, certified exact/ambiguous, truth containment, widths by case; independently verify exhaustive binary sequences length <=8. No raw user context or identifiers other than benchmark task ID. Separate public annotations from simulator evidence."
+  },
+  "evidence": "Write row-level outcomes, reasons, failures and unresolved evidence; independently crosscheck offline. Keep latency samples separate from deterministic archive. No paid requests, human contacts, publication, or scheduled work."
+}
